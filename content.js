@@ -1,3 +1,94 @@
+// Fungsi untuk menampilkan pop-up Neo Brutalism yang estetik
+function showNeoAlert(message, type = "success") {
+  // Hapus alert lama jika masih ada
+  const existingModal = document.getElementById('neo-brutalist-modal');
+  if (existingModal) existingModal.remove();
+
+  // Tentukan warna tema berdasarkan jenis pesan
+  let bgColor = "#00f0ff"; // Cyan untuk sukses
+  let titleText = "BERHASIL! 🎉";
+  if (type === "error") {
+    bgColor = "#ff5757"; // Merah untuk error/stop
+    titleText = "INFO 🛑";
+  } else if (type === "warning") {
+    bgColor = "#ffde59"; // Kuning untuk peringatan
+    titleText = "PERHATIAN ⚠️";
+  }
+
+  // Buat kontainer utama overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'neo-brutalist-modal';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+
+  // Buat kotak dialog pop-up
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `
+    background-color: ${bgColor};
+    border: 4px solid #111;
+    border-radius: 8px;
+    box-shadow: 5px 5px 0px #111;
+    padding: 20px 24px;
+    width: 320px;
+    text-align: center;
+    animation: neoPop 0.2s ease-out;
+  `;
+
+  dialog.innerHTML = `
+    <h3 style="
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      color: #111;
+    ">${titleText}</h3>
+    <p style="
+      margin: 0 0 20px 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      line-height: 1.4;
+    ">${message}</p>
+    <button id="neo-ok-btn" style="
+      background-color: #ffffff;
+      color: #111;
+      border: 3px solid #111;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 3px 3px 0px #111;
+      transition: transform 0.1s, box-shadow 0.1s;
+    ">OKE MENGERTI</button>
+  `;
+
+  // Efek tombol saat diklik
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  const okBtn = document.getElementById('neo-ok-btn');
+  okBtn.addEventListener('mousedown', () => {
+    okBtn.style.transform = 'translate(2px, 2px)';
+    okBtn.style.boxShadow = 'none';
+  });
+  okBtn.addEventListener('click', () => {
+    overlay.remove();
+  });
+}
+
+// dont touch this code above, it's for the alert pop-up design
+
 let stopProcess = false;
 
 function sleep(ms) {
@@ -39,6 +130,19 @@ function clickModalOption(modal, selectors, labelText) {
   return false;
 }
 
+// Ambil pengaturan kustom dari storage
+async function getCustomRules() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['ruleTahajud', 'ruleDhuha', 'ruleDays'], (result) => {
+      resolve({
+        tahajud: result.ruleTahajud || "Tidak",
+        dhuha: result.ruleDhuha || "4 Rakaat",
+        allowedDays: result.ruleDays !== undefined ? result.ruleDays : [0, 1, 2, 3, 4, 5, 6] // Default semua hari
+      });
+    });
+  });
+}
+
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.action === "jalankan_otomatis") {
     stopProcess = false;
@@ -75,11 +179,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   return true;
 });
 
-// LOGIKA HARIAN
+// LOGIKA HARIAN (DIPERBARUI: Menimpa jurnal yang sudah terisi & filter hari kustom)
 async function jalankanDenganKontrol(speedMode) {
   let delay = 200;
   if (speedMode === "normal") delay = 600;
   if (speedMode === "instant") delay = 0;
+
+  const rules = await getCustomRules();
 
   const allCells = Array.from(document.querySelectorAll('.column-daily-habit[data-date]'));
   if (allCells.length === 0) {
@@ -93,6 +199,12 @@ async function jalankanDenganKontrol(speedMode) {
     if (stopProcess) break;
     const date = dates[d];
 
+    // Cek apakah hari ini termasuk dalam hari yang dipilih di pengaturan kustom
+    const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (!rules.allowedDays.includes(dayOfWeek)) {
+      continue; // Lewati hari yang tidak dicentang
+    }
+
     const editBtn = document.querySelector(`.daily-habit-edit-button[data-date="${date}"]`);
     if (editBtn) {
       editBtn.click();
@@ -101,16 +213,13 @@ async function jalankanDenganKontrol(speedMode) {
 
     if (stopProcess) break;
 
+    // Ambil SEMUA sel pada tanggal tersebut (baik yang bertuliskan "Isi" maupun yang sudah terisi)
     const cellsForDay = Array.from(document.querySelectorAll(`.column-daily-habit[data-date="${date}"]`));
-    const unfiled = cellsForDay.filter(cell => {
-      const caption = cell.querySelector('.button-dropdown-caption');
-      const dropdownDiv = cell.querySelector('.dropdown');
-      return (caption && caption.textContent.trim() === "Isi") || (dropdownDiv && !dropdownDiv.classList.contains('d-none'));
-    });
+    const activeCells = cellsForDay.filter(cell => !cell.classList.contains('cursor-not-allowed'));
 
-    for (let i = 0; i < unfiled.length; i++) {
+    for (let i = 0; i < activeCells.length; i++) {
       if (stopProcess) break;
-      const cell = unfiled[i];
+      const cell = activeCells[i];
       
       const tr = cell.closest('tr');
       let habitName = "";
@@ -121,7 +230,6 @@ async function jalankanDenganKontrol(speedMode) {
       const groupAttr = cell.getAttribute('data-group') || "";
       const textInfo = (habitName + " " + groupAttr).toLowerCase();
 
-      const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
       const isFriday = (dayOfWeek === 5);
 
       const trigger = cell.querySelector('.button-dropdown-caption, [data-toggle="dropdown"]') || cell;
@@ -134,13 +242,13 @@ async function jalankanDenganKontrol(speedMode) {
         let targetItem = null;
 
         if (textInfo.includes("dhuha")) {
-          targetItem = items.find(el => el.textContent.includes("4 Rakaat"));
+          targetItem = items.find(el => el.textContent.includes(rules.dhuha));
         } else if (textInfo.includes("tidur")) {
           targetItem = items.find(el => el.textContent.includes("22.00"));
         } else if (textInfo.includes("bangun")) {
           targetItem = items.find(el => el.textContent.includes("05.00") || el.textContent.includes("5.00"));
         } else if (textInfo.includes("malam") || textInfo.includes("tahajud")) {
-          targetItem = items.find(el => el.textContent.includes("Tidak"));
+          targetItem = items.find(el => el.textContent.includes(rules.tahajud));
         } else if (textInfo.includes("mengaji") || textInfo.includes("tilawah")) {
           if (isFriday) {
             targetItem = items.find(el => el.textContent.includes("Melaksanakan"));
@@ -166,9 +274,14 @@ async function jalankanDenganKontrol(speedMode) {
         const titleText = modalTitle ? modalTitle.textContent.toLowerCase() : textInfo;
 
         if (titleText.includes("malam") || titleText.includes("tahajud")) {
-          clickModalOption(modalContent, 'input[data-category="Tidak Melaksanakan"], input[data-point="0"]', "Tidak Melaksanakan");
+          if (rules.tahajud.toLowerCase().includes("tidak")) {
+            clickModalOption(modalContent, 'input[data-category="Tidak Melaksanakan"], input[data-point="0"]', "Tidak Melaksanakan");
+          } else {
+            // Jika memilih rakaat shalat malam tertentu
+            clickModalOption(modalContent, `input[data-category="${rules.tahajud}"], input[data-point="1"]`, rules.tahajud);
+          }
         } else if (titleText.includes("dhuha")) {
-          clickModalOption(modalContent, 'input[data-category="4 Rakaat"], input[data-point="4"]', "4 Rakaat");
+          clickModalOption(modalContent, `input[data-category="${rules.dhuha}"], input[data-point="4"]`, rules.dhuha);
         } else if (titleText.includes("mengaji") || titleText.includes("tilawah")) {
           if (isFriday) {
             clickModalOption(modalContent, 'input[data-category="Melaksanakan"], input[data-point="1"]', "Melaksanakan");
@@ -206,50 +319,43 @@ async function jalankanDenganKontrol(speedMode) {
   }
 
   if (!stopProcess) {
-    alert("Selesai! Seluruh jurnal harian berhasil diisi.");
+    showNeoAlert("Seluruh jurnal harian berhasil diisi dan diperbarui dengan sempurna!", "success");
   } else {
-    alert("Proses harian dihentikan.");
+    showNeoAlert("Proses pengisian jurnal berhasil dihentikan.", "error");
   }
 }
 
-// LOGIKA MINGGUAN DENGAN FITUR AUTO NEXT WEEK
+// LOGIKA MINGGUAN LINTAS MINGGU
 async function jalankanMingguanLintasMinggu(speedMode, autoNext) {
   let weekLoopCount = 0;
-  const maxWeeks = 10; // Batas aman maksimal perpindahan minggu
+  const maxWeeks = 10;
 
   while (weekLoopCount < maxWeeks && !stopProcess) {
-    // 1. Jalankan pengisian mingguan untuk minggu yang sedang aktif di layar
     await jalankanMingguanOtomatis(speedMode);
 
     if (stopProcess) break;
 
-    // 2. Jika opsi "Auto Next Week" tidak dicentang, cukup jalankan 1 minggu lalu berhenti
     if (!autoNext) {
       break;
     }
 
-    // 3. Cari tombol "Minggu Selanjutnya" (`#next-week`)
     const nextWeekBtn = document.querySelector('#next-week');
     if (!isVisible(nextWeekBtn)) {
-      break; // Jika tombol tidak ada atau tersembunyi, akhiri proses
+      break;
     }
 
-    // Klik tombol ke minggu selanjutnya
     nextWeekBtn.click();
-    
-    // Tunggu halaman atau tabel mingguan termuat ulang
     await sleep(1500);
     weekLoopCount++;
   }
 
-  if (!stopProcess) {
-    alert("Selesai! Seluruh jurnal mingguan (termasuk lintas minggu) berhasil diisi otomatis.");
+    if (!stopProcess) {
+    showNeoAlert("Seluruh jurnal mingguan berhasil diisi dan diperbarui dengan sempurna!", "success");
   } else {
-    alert("Proses mingguan dihentikan.");
+    showNeoAlert("Proses pengisian jurnal berhasil dihentikan.", "error");
   }
 }
 
-// Inti Proses Pengisian 1 Minggu
 async function jalankanMingguanOtomatis(speedMode) {
   let delay = 400;
   if (speedMode === "normal") delay = 1000;
@@ -261,7 +367,7 @@ async function jalankanMingguanOtomatis(speedMode) {
   while (!stopProcess && safetyCounter < maxItems) {
     const link = document.querySelector('#render-habituation-weekly a.habit-weekly');
     if (!link) {
-      break; // Selesai jika tidak ada link "Isi Jurnal" lagi di minggu ini
+      break;
     }
 
     const tr = link.closest('tr');
@@ -284,7 +390,6 @@ async function jalankanMingguanOtomatis(speedMode) {
 
     await sleep(delay);
 
-    // STEP 1: Laporan
     if (habitName.includes("puasa") || habitName.includes("sunnah")) {
       const undoneRadio = modal.querySelector('input[name="radioCategory"][data-type="undone"], input[value="tidak melaksanakan"]');
       if (undoneRadio) {
@@ -300,7 +405,6 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
     await sleep(delay);
 
-    // STEP 2: Tanggal / Hari
     const dayRadios = Array.from(modal.querySelectorAll('input[name="dateWeekly"]'));
     if (dayRadios.length > 0) {
       let targetDayRadio = null;
@@ -332,7 +436,6 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
     await sleep(delay);
 
-    // STEP 3: Saksi (Orang Tua / PARENT)
     const parentWitness = modal.querySelector('input[name="witness_type"][value="PARENT"]');
     if (parentWitness) {
       parentWitness.click();
@@ -340,7 +443,6 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
     await sleep(delay);
 
-    // STEP 4: Simpan
     const saveBtn = modal.querySelector('.create-deed-weekly, .update-deed-weekly, #buttonCreateWeekly, #buttonUpdateWeekly');
     if (saveBtn) {
       saveBtn.removeAttribute('disabled');

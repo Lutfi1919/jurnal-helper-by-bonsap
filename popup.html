@@ -79,7 +79,6 @@
     input:checked + .slider { background-color: #00f0ff; }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* Style untuk Checkbox Auto Next Week */
     .checkbox-group {
       display: flex;
       align-items: center;
@@ -119,35 +118,22 @@
       box-shadow: none !important;
     }
 
-    #btnMulai {
-      background-color: #ff5757;
-      color: #fff;
-      box-shadow: 3px 3px 0px #111;
-    }
+    #btnMulai { background-color: #ff5757; color: #fff; box-shadow: 3px 3px 0px #111; }
     #btnMulai:hover { background-color: #ff3b3b; }
 
-    #btnMulaiMingguan {
-      background-color: #a78bfa;
-      color: #fff;
-      box-shadow: 3px 3px 0px #111;
-    }
+    #btnMulaiMingguan { background-color: #a78bfa; color: #fff; box-shadow: 3px 3px 0px #111; }
     #btnMulaiMingguan:hover { background-color: #8b5cf6; }
 
-    #btnStop {
-      background-color: #00f0ff;
-      color: #111;
-      box-shadow: 3px 3px 0px #111;
-      display: none;
-    }
-    #btnStop:hover { background-color: #00d7e5; }
+    #btnAutoLintasMinggu { background-color: #00f0ff; color: #111; box-shadow: 3px 3px 0px #111; display: none; }
+    #btnAutoLintasMinggu:hover { background-color: #00d7e5; }
 
-    button:disabled {
-      background-color: #d1d5db;
-      color: #9ca3af;
-      box-shadow: none;
-      cursor: not-allowed;
-      transform: none;
-    }
+    #btnSettings { background-color: #ff914d; color: #111; box-shadow: 3px 3px 0px #111; }
+    #btnSettings:hover { background-color: #fa7d2b; }
+
+    #btnStop { background-color: #ffde59; color: #111; box-shadow: 3px 3px 0px #111; display: none; }
+    #btnStop:hover { background-color: #facc15; }
+
+    button:disabled { background-color: #d1d5db; color: #9ca3af; box-shadow: none; cursor: not-allowed; transform: none; }
   </style>
 </head>
 <body>
@@ -172,11 +158,13 @@
 
   <label class="checkbox-group">
     <input type="checkbox" id="autoNextWeek">
-    <span>AUTO NEXT WEEK (Minggu Depan)</span>
+    <span>AUTO NEXT WEEK</span>
   </label>
 
   <button id="btnMulai">🚀 Jurnal Harian</button>
   <button id="btnMulaiMingguan">📅 Jurnal Mingguan</button>
+  <button id="btnAutoLintasMinggu">⚡ Jalankan Auto Lintas Minggu</button>
+  <button id="btnSettings">⚙️ Kustomisasi Aturan</button>
   <button id="btnStop">🛑 Berhenti</button>
 
   <script src="popup.js"></script>

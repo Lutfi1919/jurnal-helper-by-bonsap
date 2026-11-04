@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kustomisasi Aturan Jurnal</title>
+  <style>
+    body {
+      width: 300px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 14px;
+      margin: 0;
+      background-color: #f3f4f6;
+      color: #111;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 900;
+      margin-top: 0;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      text-align: center;
+      border-bottom: 3px solid #111;
+      padding-bottom: 6px;
+    }
+
+    .form-group {
+      background: #ffffff;
+      padding: 10px 12px;
+      border: 3px solid #111;
+      border-radius: 6px;
+      box-shadow: 3px 3px 0px #111;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+      border: 2px solid #111;
+      background-color: #ffde59;
+      font-weight: bold;
+      font-size: 11px;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+
+    input[type="text"] {
+      background-color: #fff;
+    }
+
+    .days-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .day-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: 3px solid #111;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-top: 6px;
+      background-color: #10b981;
+      color: #fff;
+      box-shadow: 3px 3px 0px #111;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    button:active {
+      transform: translate(2px, 2px);
+      box-shadow: none !important;
+    }
+
+    #btnBack {
+      background-color: #cbd5e1;
+      color: #111;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h3>⚙️ Kustomisasi Aturan</h3>
+
+  <div class="form-group">
+    <label for="tahajudRakaat">Shalat Malam / Tahajud:</label>
+    <select id="tahajudRakaat">
+      <option value="Tidak">Tidak Melaksanakan</option>
+      <option value="2 Rakaat">2 Rakaat</option>
+      <option value="4 Rakaat">4 Rakaat</option>
+      <option value="8 Rakaat">8 Rakaat</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="dhuhaRakaat">Shalat Dhuha:</label>
+    <select id="dhuhaRakaat">
+      <option value="2 Rakaat">2 Rakaat</option>
+      <option value="4 Rakaat" selected>4 Rakaat</option>
+      <option value="8 Rakaat">8 Rakaat</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Pilih Hari yang Ingin Dikerjakan:</label>
+    <div class="days-container">
+      <label class="day-checkbox"><input type="checkbox" name="days" value="1" checked> Sen</label>
+      <label class="day-checkbox"><input type="checkbox" name="days" value="2" checked> Sel</label>
+      <label class="day-checkbox"><input type="checkbox" name="days" value="3" checked> Rab</label>
+      <label class="day-checkbox"><input type="checkbox" name="days" value="4" checked> Kam</label>
+      <label class="day-checkbox"><input type="checkbox" name="days" value="5" checked> Jum</label>
+      <label class="day-checkbox"><input type="checkbox" name="days" value="6" checked> Sab</label>
+      <label class="day-checkbox"><input type="checkbox" name="days" value="0" checked> Min</label>
+    </div>
+  </div>
+
+  <button id="btnSaveSettings">💾 Simpan Pengaturan</button>
+  <button id="btnBack">⬅️ Kembali</button>
+
+  <script src="settings.js"></script>
+</body>
+</html>
