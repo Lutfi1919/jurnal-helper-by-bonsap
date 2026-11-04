@@ -12,7 +12,7 @@ Jurnal Helper adalah ekstensi browser untuk membantu mengisi jurnal harian dan m
 
 ## Persyaratan
 
-- Google Chrome atau Microsoft Edge versi terbaru.
+- Google Chrome, Microsoft Edge dan Brave versi terbaru.
 - Akun dan akses ke `https://app.kejar.id`.
 - Git, jika ingin meng-clone project.
 
@@ -65,3 +65,5 @@ Ekstensi hanya berjalan pada halaman `https://app.kejar.id/*`. Jika tombol tidak
 ## Catatan
 
 Ekstensi mengisi data berdasarkan aturan otomatis di dalam kode. Tinjau kembali pilihan dan hasil jurnal sebelum mengandalkannya sebagai catatan final. Perubahan pada tampilan atau struktur halaman Kejar.id dapat menyebabkan otomatisasi tidak berjalan sebagaimana mestinya.
+
+# JANGAN LUPA STAR REPO INI!!!
