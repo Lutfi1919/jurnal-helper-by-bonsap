@@ -6,7 +6,15 @@ Jurnal Helper adalah ekstensi browser untuk membantu mengisi jurnal harian dan m
 
 - Mengisi jurnal harian secara otomatis.
 - Mengisi jurnal mingguan secara otomatis.
+- Mengatur hari pelaksanaan terpisah untuk shalat malam, dhuha, dan mengaji.
+- Pilihan hari shalat malam otomatis dinonaktifkan saat memilih "Tidak".
+- Mengatur status, hari, jenis saksi, dan nama saksi secara terpisah untuk setiap habit jurnal mingguan.
+- Pilihan status mingguan: otomatis, mengerjakan, melaksanakan 2 hari (khusus Puasa Sunnah), salah satu hari (khusus Puasa Sunnah), tidak mengerjakan, dan tidak ada kegiatan.
+- Status tidak mengerjakan atau tidak ada kegiatan otomatis menonaktifkan pilihan hari dan saksi.
+- Sholat Jumat otomatis terkunci pada hari Jumat saat berstatus melaksanakan.
+- Memilih saksi Orang Tua otomatis mengosongkan nama saksi.
 - Memilih kecepatan proses: Instan, Cepat, atau Normal.
+- Suara chime saat jurnal harian atau mingguan selesai dikerjakan.
 - Menonaktifkan ekstensi atau menghentikan proses yang sedang berjalan.
 - Menyimpan status aktif dan pilihan kecepatan di penyimpanan browser.
 
@@ -62,8 +70,15 @@ Ekstensi hanya berjalan pada halaman `https://app.kejar.id/*`. Jika tombol tidak
 - `popup.html`: tampilan popup ekstensi.
 - `popup.js`: pengaturan status, pilihan kecepatan, dan kontrol proses dari popup.
 
+## Jika ekstensi macet
+
+1. Buka popup ekstensi dan klik **Berhenti**.
+2. Tekan **Ctrl + Shift + R** untuk refresh halaman Kejar.id.
+3. Jalankan ulang jurnal. Entri yang belum terisi akan diproses kembali.
+
 ## Catatan
 
 Ekstensi mengisi data berdasarkan aturan otomatis di dalam kode. Tinjau kembali pilihan dan hasil jurnal sebelum mengandalkannya sebagai catatan final. Perubahan pada tampilan atau struktur halaman Kejar.id dapat menyebabkan otomatisasi tidak berjalan sebagaimana mestinya.
 
 # JANGAN LUPA STAR REPO INI!!!
+Fitur **Auto Lintas Minggu** untuk sementara dinonaktifkan dan dapat diaktifkan kembali melalui flag `AUTO_NEXT_WEEK_ENABLED` di `popup.js` dan `content.js`.

@@ -15,5 +15,15 @@
   ],
   "action": {
     "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/Maskot Bonsap.png",
+    "32": "icons/Maskot Bonsap.png",
+    "48": "icons/Maskot Bonsap.png",
+    "128": "icons/Maskot Bonsap.png"
+  },
+  "default_icon": {
+    "16": "icons/Maskot Bonsap.png",
+    "32": "icons/Maskot Bonsap.png"
   }
 }
