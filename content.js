@@ -64,7 +64,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         return;
       }
       
-      await jalankanMingguanOtomatis(request.speed);
+      await jalankanMingguanLintasMinggu(request.speed, request.autoNext);
       chrome.runtime.sendMessage({ action: "proses_selesai" });
     });
     sendResponse({ status: "started" });
@@ -75,7 +75,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   return true;
 });
 
-// ================= LOGIKA HARIAN =================
+// LOGIKA HARIAN
 async function jalankanDenganKontrol(speedMode) {
   let delay = 200;
   if (speedMode === "normal") delay = 600;
@@ -211,29 +211,64 @@ async function jalankanDenganKontrol(speedMode) {
     alert("Proses harian dihentikan.");
   }
 }
-// ================= LOGIKA MINGGUAN (Dynamic While Loop - Dijamin Semua Terisi) =================
+
+// LOGIKA MINGGUAN DENGAN FITUR AUTO NEXT WEEK
+async function jalankanMingguanLintasMinggu(speedMode, autoNext) {
+  let weekLoopCount = 0;
+  const maxWeeks = 10; // Batas aman maksimal perpindahan minggu
+
+  while (weekLoopCount < maxWeeks && !stopProcess) {
+    // 1. Jalankan pengisian mingguan untuk minggu yang sedang aktif di layar
+    await jalankanMingguanOtomatis(speedMode);
+
+    if (stopProcess) break;
+
+    // 2. Jika opsi "Auto Next Week" tidak dicentang, cukup jalankan 1 minggu lalu berhenti
+    if (!autoNext) {
+      break;
+    }
+
+    // 3. Cari tombol "Minggu Selanjutnya" (`#next-week`)
+    const nextWeekBtn = document.querySelector('#next-week');
+    if (!isVisible(nextWeekBtn)) {
+      break; // Jika tombol tidak ada atau tersembunyi, akhiri proses
+    }
+
+    // Klik tombol ke minggu selanjutnya
+    nextWeekBtn.click();
+    
+    // Tunggu halaman atau tabel mingguan termuat ulang
+    await sleep(1500);
+    weekLoopCount++;
+  }
+
+  if (!stopProcess) {
+    alert("Selesai! Seluruh jurnal mingguan (termasuk lintas minggu) berhasil diisi otomatis.");
+  } else {
+    alert("Proses mingguan dihentikan.");
+  }
+}
+
+// Inti Proses Pengisian 1 Minggu
 async function jalankanMingguanOtomatis(speedMode) {
   let delay = 400;
   if (speedMode === "normal") delay = 1000;
   if (speedMode === "instant") delay = 120;
 
   let safetyCounter = 0;
-  const maxItems = 20; // Batas aman untuk mencegah infinite loop
+  const maxItems = 20;
 
   while (!stopProcess && safetyCounter < maxItems) {
-    // Cari link "Isi Jurnal" pertama yang masih tersedia di tabel mingguan
     const link = document.querySelector('#render-habituation-weekly a.habit-weekly');
     if (!link) {
-      break; // Jika sudah tidak ada link "Isi Jurnal", artinya semua sudah beres!
+      break; // Selesai jika tidak ada link "Isi Jurnal" lagi di minggu ini
     }
 
     const tr = link.closest('tr');
     const habitName = tr ? tr.textContent.trim().toLowerCase() : "";
 
-    // 1. Klik untuk membuka modal mingguan
     link.click();
 
-    // 2. Tunggu sampai modal mingguan benar-benar muncul dan terlihat
     let modal = null;
     let attempts = 0;
     while (!modal && attempts < 25 && !stopProcess) {
@@ -247,9 +282,9 @@ async function jalankanMingguanOtomatis(speedMode) {
       continue;
     }
 
-    await sleep(delay); // Jeda agar render modal stabil
+    await sleep(delay);
 
-    // 3. STEP 1: Pilih Laporan (Atas)
+    // STEP 1: Laporan
     if (habitName.includes("puasa") || habitName.includes("sunnah")) {
       const undoneRadio = modal.querySelector('input[name="radioCategory"][data-type="undone"], input[value="tidak melaksanakan"]');
       if (undoneRadio) {
@@ -265,19 +300,17 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
     await sleep(delay);
 
-    // 4. STEP 2: Pilih Tanggal/Hari (Tengah)
+    // STEP 2: Tanggal / Hari
     const dayRadios = Array.from(modal.querySelectorAll('input[name="dateWeekly"]'));
     if (dayRadios.length > 0) {
       let targetDayRadio = null;
 
       if (habitName.includes("sholat jumat") || habitName.includes("jumat")) {
-        // Sholat Jumat -> Cari hari Jumat (day === 5)
         targetDayRadio = dayRadios.find(input => {
           const dateStr = input.getAttribute('data-date');
           return new Date(`${dateStr}T00:00:00Z`).getUTCDay() === 5;
         });
       } else {
-        // Puasa sunnah, kuku, memasak, dll -> Pilih Weekend (Sabtu=6 atau Minggu=0) secara acak
         const weekendRadios = dayRadios.filter(input => {
           const dateStr = input.getAttribute('data-date');
           const day = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
@@ -299,7 +332,7 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
     await sleep(delay);
 
-    // 5. STEP 3: Pilih Saksi -> Orang Tua (PARENT) (Bawah)
+    // STEP 3: Saksi (Orang Tua / PARENT)
     const parentWitness = modal.querySelector('input[name="witness_type"][value="PARENT"]');
     if (parentWitness) {
       parentWitness.click();
@@ -307,7 +340,7 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
     await sleep(delay);
 
-    // 6. STEP 4: Aktifkan dan Klik Tombol Simpan
+    // STEP 4: Simpan
     const saveBtn = modal.querySelector('.create-deed-weekly, .update-deed-weekly, #buttonCreateWeekly, #buttonUpdateWeekly');
     if (saveBtn) {
       saveBtn.removeAttribute('disabled');
@@ -315,7 +348,6 @@ async function jalankanMingguanOtomatis(speedMode) {
       saveBtn.classList.add('btn-primary');
       
       saveBtn.click();
-      // Jeda agak panjang agar server selesai menyimpan dan modal tertutup sempurna
       await sleep(delay > 0 ? 800 : 250); 
     } else {
       const closeBtn = modal.querySelector('.close, [data-dismiss="modal"]');
@@ -324,11 +356,5 @@ async function jalankanMingguanOtomatis(speedMode) {
     }
 
     safetyCounter++;
-  }
-
-  if (!stopProcess) {
-    alert("Selesai! Seluruh jurnal mingguan berhasil diisi lengkap tanpa ada yang terlewat.");
-  } else {
-    alert("Proses mingguan dihentikan.");
   }
 }

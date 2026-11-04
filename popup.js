@@ -3,14 +3,18 @@ const btnMulai = document.getElementById('btnMulai');
 const btnMulaiMingguan = document.getElementById('btnMulaiMingguan');
 const btnStop = document.getElementById('btnStop');
 const speedSelect = document.getElementById('speedSelect');
+const autoNextWeekCheckbox = document.getElementById('autoNextWeek');
 
-chrome.storage.local.get(['extensionActive', 'speedSetting'], (result) => {
+chrome.storage.local.get(['extensionActive', 'speedSetting', 'autoNextWeek'], (result) => {
   const isActive = result.extensionActive !== false;
   toggle.checked = isActive;
   btnMulai.disabled = !isActive;
   btnMulaiMingguan.disabled = !isActive;
   if (result.speedSetting) {
     speedSelect.value = result.speedSetting;
+  }
+  if (result.autoNextWeek !== undefined) {
+    autoNextWeekCheckbox.checked = result.autoNextWeek;
   }
 });
 
@@ -26,12 +30,15 @@ speedSelect.addEventListener('change', () => {
   chrome.storage.local.set({ speedSetting: speedSelect.value });
 });
 
-// Jalankan Harian
+autoNextWeekCheckbox.addEventListener('change', () => {
+  chrome.storage.local.set({ autoNextWeek: autoNextWeekCheckbox.checked });
+});
+
 btnMulai.addEventListener('click', async () => {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab && tab.url.includes('app.kejar.id')) {
     setRunningState();
-    chrome.tabs.sendMessage(tab.id, { action: "jalankan_otomatis", speed: speedSelect.value }, (response) => {
+    chrome.tabs.sendMessage(tab.id, { action: "jalankan_otomatis", speed: speedSelect.value }, () => {
       if (chrome.runtime.lastError) {
         alert("Gagal terhubung. Refresh halaman (F5).");
         resetButtons();
@@ -42,12 +49,15 @@ btnMulai.addEventListener('click', async () => {
   }
 });
 
-// Jalankan Mingguan
 btnMulaiMingguan.addEventListener('click', async () => {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab && tab.url.includes('app.kejar.id')) {
     setRunningState();
-    chrome.tabs.sendMessage(tab.id, { action: "jalankan_mingguan", speed: speedSelect.value }, (response) => {
+    chrome.tabs.sendMessage(tab.id, { 
+      action: "jalankan_mingguan", 
+      speed: speedSelect.value, 
+      autoNext: autoNextWeekCheckbox.checked 
+    }, () => {
       if (chrome.runtime.lastError) {
         alert("Gagal terhubung. Refresh halaman (F5).");
         resetButtons();

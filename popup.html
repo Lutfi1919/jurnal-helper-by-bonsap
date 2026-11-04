@@ -79,6 +79,28 @@
     input:checked + .slider { background-color: #00f0ff; }
     input:checked + .slider:before { transform: translateX(20px); }
 
+    /* Style untuk Checkbox Auto Next Week */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      padding: 10px 12px;
+      border: 3px solid #111;
+      border-radius: 6px;
+      box-shadow: 3px 3px 0px #111;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #ff5757;
+    }
+
     button {
       width: 100%;
       padding: 10px;
@@ -105,7 +127,7 @@
     #btnMulai:hover { background-color: #ff3b3b; }
 
     #btnMulaiMingguan {
-      background-color: #a78bfa; /* Ungu terang untuk mingguan */
+      background-color: #a78bfa;
       color: #fff;
       box-shadow: 3px 3px 0px #111;
     }
@@ -147,6 +169,11 @@
       <option value="normal">🐢 Normal</option>
     </select>
   </div>
+
+  <label class="checkbox-group">
+    <input type="checkbox" id="autoNextWeek">
+    <span>AUTO NEXT WEEK (Minggu Depan)</span>
+  </label>
 
   <button id="btnMulai">🚀 Jurnal Harian</button>
   <button id="btnMulaiMingguan">📅 Jurnal Mingguan</button>
