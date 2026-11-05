@@ -270,6 +270,33 @@
       color: var(--muted);
     }
 
+    .day-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .day-head .field-label { margin: 0; }
+    .link-btn {
+      flex-shrink: 0;
+      padding: 3px 8px;
+      border: 2px solid var(--ink);
+      border-radius: 7px;
+      background: var(--yellow);
+      font-family: inherit;
+      font-size: 8.5px;
+      font-weight: 900;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 var(--ink);
+      transition: transform .15s var(--ease-bounce), box-shadow .15s, background .2s;
+    }
+    .link-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+    .link-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+    .link-btn.is-all { background: var(--cyan); }
+
     .day-row {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -632,6 +659,36 @@
     </section>
 
     <section class="card">
+      <div class="card-title"><span class="badge-ico">🕌</span> Shalat 5 Waktu</div>
+      <div class="option-grid" data-select="shalatHarianStatus">
+        <button type="button" class="option" data-value="auto"><span>🤖</span> Otomatis</button>
+        <button type="button" class="option" data-value="jamaah"><span>🕌</span> Berjamaah</button>
+        <button type="button" class="option" data-value="munfarid"><span>🧍</span> Tidak Berjamaah</button>
+        <button type="button" class="option" data-value="tidak"><span>🚫</span> Tidak Melaksanakan</button>
+      </div>
+      <select id="shalatHarianStatus" class="hide" tabindex="-1" aria-hidden="true">
+        <option value="auto">Otomatis</option>
+        <option value="jamaah">Berjamaah</option>
+        <option value="munfarid">Tidak Berjamaah</option>
+        <option value="tidak">Tidak Melaksanakan</option>
+      </select>
+      <div class="day-head">
+        <div class="field-label">Hari pelaksanaan</div>
+        <button type="button" class="link-btn" data-all-days="shalatHarianDays">Pilih Semua</button>
+      </div>
+      <div class="day-row" data-days="shalatHarianDays" data-mode="multi">
+        <button type="button" class="day-toggle" data-day="1">Sen</button>
+        <button type="button" class="day-toggle" data-day="2">Sel</button>
+        <button type="button" class="day-toggle" data-day="3">Rab</button>
+        <button type="button" class="day-toggle" data-day="4">Kam</button>
+        <button type="button" class="day-toggle" data-day="5">Jum</button>
+        <button type="button" class="day-toggle" data-day="6">Sab</button>
+        <button type="button" class="day-toggle" data-day="0">Min</button>
+      </div>
+      <p class="card-hint">Shalat Subuh, Dzuhur, Ashar, Maghrib, dan Isya akan diisi sesuai pilihan ini pada hari yang aktif.</p>
+    </section>
+
+    <section class="card">
       <div class="card-title"><span class="badge-ico">📖</span> Mengaji / Tilawah</div>
       <div class="field-label">Hari pelaksanaan</div>
       <div class="day-row" data-days="mengajiDays" data-mode="multi">
@@ -643,7 +700,7 @@
         <button type="button" class="day-toggle" data-day="6">Sab</button>
         <button type="button" class="day-toggle" data-day="0">Min</button>
       </div>
-      <p class="card-hint">Hari yang dipilih akan diisi "Melaksanakan". Hari lain dilewati.</p>
+      <p class="card-hint">Hari yang dipilih akan diisi "Melaksanakan". Hari lain diisi "Tidak Melaksanakan".</p>
     </section>
   </div>
 

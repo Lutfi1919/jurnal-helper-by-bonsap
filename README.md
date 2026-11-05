@@ -6,7 +6,10 @@ Jurnal Helper adalah ekstensi browser untuk membantu mengisi jurnal harian dan m
 
 - Mengisi jurnal harian secara otomatis.
 - Mengisi jurnal mingguan secara otomatis.
-- Mengatur hari pelaksanaan terpisah untuk shalat malam, dhuha, dan mengaji.
+- Mengatur hari pelaksanaan terpisah untuk shalat malam, dhuha, shalat 5 waktu, dan mengaji.
+- Mengatur shalat 5 waktu dengan pilihan otomatis, berjamaah, tidak berjamaah, atau tidak melaksanakan.
+- Tombol **Pilih Semua / Kosongkan** untuk memilih atau menghapus semua hari sekaligus.
+- Hari mengaji yang tidak dipilih otomatis diisi "Tidak Melaksanakan".
 - Pilihan hari shalat malam otomatis dinonaktifkan saat memilih "Tidak".
 - Mengatur status, hari, jenis saksi, dan nama saksi secara terpisah untuk setiap habit jurnal mingguan.
 - Pilihan status mingguan: otomatis, mengerjakan, melaksanakan 2 hari (khusus Puasa Sunnah), salah satu hari (khusus Puasa Sunnah), tidak mengerjakan, dan tidak ada kegiatan.
@@ -29,7 +32,7 @@ Jurnal Helper adalah ekstensi browser untuk membantu mengisi jurnal harian dan m
 Ganti URL contoh di bawah dengan URL repository GitHub project ini:
 
 ```bash
-git clone https://github.com/USERNAME/REPOSITORY.git
+git clone https://github.com/Lutfi1919/jurnal-helper-by-bonsap.git
 cd REPOSITORY
 ```
 

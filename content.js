@@ -427,7 +427,10 @@ function clickModalOption(modal, selectors, labelText) {
 async function getCustomRules() {
   return new Promise((resolve) => {
     chrome.storage.local.get(
-      ['ruleTahajud', 'ruleDhuha', 'ruleDays', 'ruleTahajudDays', 'ruleDhuhaDays', 'ruleMengajiDays'],
+      [
+        'ruleTahajud', 'ruleDhuha', 'ruleDays', 'ruleTahajudDays', 'ruleDhuhaDays', 'ruleMengajiDays',
+        'ruleShalatHarian', 'ruleShalatHarianDays'
+      ],
       (result) => {
         const legacyDays = result.ruleDays !== undefined ? result.ruleDays : [0, 1, 2, 3, 4, 5, 6];
         resolve({
@@ -435,7 +438,9 @@ async function getCustomRules() {
           dhuha: result.ruleDhuha || "4 Rakaat",
           tahajudDays: result.ruleTahajudDays !== undefined ? result.ruleTahajudDays : legacyDays,
           dhuhaDays: result.ruleDhuhaDays !== undefined ? result.ruleDhuhaDays : legacyDays,
-          mengajiDays: result.ruleMengajiDays !== undefined ? result.ruleMengajiDays : legacyDays
+          mengajiDays: result.ruleMengajiDays !== undefined ? result.ruleMengajiDays : legacyDays,
+          shalatHarian: result.ruleShalatHarian || "auto",
+          shalatHarianDays: result.ruleShalatHarianDays !== undefined ? result.ruleShalatHarianDays : [0, 1, 2, 3, 4, 5, 6]
         });
       }
     );
@@ -665,6 +670,104 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
+// Helper aturan shalat 5 waktu
+const SHALAT_HARIAN_EXCLUDE = ['dhuha', 'tahajud', 'malam', 'tidur', 'bangun', 'mengaji', 'tilawah', 'puasa'];
+const SHALAT_HARIAN_KEYWORDS = ['subuh', 'dzuhur', 'zuhur', 'ashar', 'maghrib', 'isya', 'isyak', 'fardhu', 'wajib'];
+
+function isShalatHarian(text) {
+  const value = (text || '').toLowerCase();
+  if (SHALAT_HARIAN_EXCLUDE.some((word) => value.includes(word))) return false;
+  if (SHALAT_HARIAN_KEYWORDS.some((word) => value.includes(word))) return true;
+  return value.includes('shalat') || value.includes('salat') || value.includes('sholat');
+}
+
+function getShalatItemText(element) {
+  return (element.textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function findShalatDropdownItem(items, keywords, negative = []) {
+  return items.find((element) => {
+    const text = getShalatItemText(element);
+    if (negative.some((word) => text.includes(word))) return false;
+    return keywords.some((word) => text.includes(word));
+  }) || null;
+}
+
+function pickShalatDropdownItem(items, mode) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  if (mode === 'tidak') {
+    return findShalatDropdownItem(items, ['tidak melaksanakan', 'tidak mengerjakan', 'belum', 'tidak'], ['berjamaah'])
+      || items[0];
+  }
+  if (mode === 'jamaah') {
+    return findShalatDropdownItem(items, ['berjamaah', 'jamaah'], ['tidak'])
+      || findShalatDropdownItem(items, ['melaksanakan', 'ya'], ['tidak'])
+      || items[0];
+  }
+  if (mode === 'munfarid') {
+    return findShalatDropdownItem(items, ['tidak berjamaah', 'tidak jamaah', 'munfarid', 'sendiri'])
+      || findShalatDropdownItem(items, ['melaksanakan', 'ya'], ['tidak'])
+      || items[0];
+  }
+  return findShalatDropdownItem(items, ['melaksanakan', 'ya'], ['tidak'])
+    || findShalatDropdownItem(items, ['berjamaah', 'jamaah'], ['tidak'])
+    || items[0];
+}
+
+function getShalatRadioText(radio) {
+  const label = radio.closest('label');
+  return `${radio.value || ''} ${radio.id || ''} ${radio.className || ''} ${radio.getAttribute('data-category') || ''} ${radio.getAttribute('data-type') || ''} ${radio.getAttribute('data-point') || ''} ${label ? label.textContent : ''}`
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function findShalatRadio(modal, keywords, negative = []) {
+  const radios = Array.from(modal.querySelectorAll('input[type="radio"], input[type="checkbox"]'));
+  return radios.find((radio) => {
+    const text = getShalatRadioText(radio);
+    if (negative.some((word) => text.includes(word))) return false;
+    return keywords.some((word) => text.includes(word));
+  }) || null;
+}
+
+function clickShalatRadio(radio) {
+  if (!radio) return false;
+  radio.click();
+  radio.dispatchEvent(new Event('change', { bubbles: true }));
+  return true;
+}
+
+function applyShalatHarianModal(modal, mode) {
+  if (mode === 'tidak') {
+    const tidak = findShalatRadio(modal, ['tidak melaksanakan', 'tidak mengerjakan', 'belum', 'tidak'], ['berjamaah']);
+    if (clickShalatRadio(tidak)) return;
+    clickModalOption(modal, 'input[data-category="Tidak Melaksanakan"], input[data-point="0"]', 'Tidak Melaksanakan');
+    return;
+  }
+
+  clickModalOption(modal, 'input.do_pray, input[data-category="Melaksanakan"], input[data-category="Ya"], input[data-point="1"]', 'Melaksanakan');
+
+  if (mode === 'jamaah') {
+    const jamaah = findShalatRadio(modal, ['berjamaah', 'jamaah'], ['tidak']);
+    if (clickShalatRadio(jamaah)) return;
+    clickModalOption(modal, 'form.salat-item input[data-category="Ya"], form.salat-item input[data-point="2"]', 'Ya');
+    return;
+  }
+
+  if (mode === 'munfarid') {
+    const munfarid = findShalatRadio(modal, ['tidak berjamaah', 'tidak jamaah', 'munfarid', 'sendiri'], []);
+    clickShalatRadio(munfarid);
+    return;
+  }
+
+  const jamaah = findShalatRadio(modal, ['berjamaah', 'jamaah'], ['tidak']);
+  if (!clickShalatRadio(jamaah)) {
+    clickModalOption(modal, 'form.salat-item input[data-category="Ya"], form.salat-item input[data-point="2"]', 'Ya');
+  }
+}
+
 // LOGIKA HARIAN (DIPERBARUI: Menimpa jurnal yang sudah terisi & filter hari kustom)
 async function jalankanDenganKontrol(speedMode) {
   let delay = 200;
@@ -725,6 +828,7 @@ async function jalankanDenganKontrol(speedMode) {
       const textInfo = (habitName + " " + groupAttr).toLowerCase();
 
       let habitAllowedToday = true;
+      let mengajiMelaksanakan = true;
       if (textInfo.includes("dhuha")) {
         habitAllowedToday = rules.dhuhaDays.includes(dayOfWeek);
       } else if (textInfo.includes("malam") || textInfo.includes("tahajud")) {
@@ -732,7 +836,9 @@ async function jalankanDenganKontrol(speedMode) {
           ? true
           : rules.tahajudDays.includes(dayOfWeek);
       } else if (textInfo.includes("mengaji") || textInfo.includes("tilawah")) {
-        habitAllowedToday = rules.mengajiDays.includes(dayOfWeek);
+        mengajiMelaksanakan = rules.mengajiDays.includes(dayOfWeek);
+      } else if (isShalatHarian(textInfo)) {
+        habitAllowedToday = rules.shalatHarianDays.includes(dayOfWeek);
       }
 
       if (!habitAllowedToday) continue;
@@ -755,7 +861,14 @@ async function jalankanDenganKontrol(speedMode) {
         } else if (textInfo.includes("malam") || textInfo.includes("tahajud")) {
           targetItem = items.find(el => el.textContent.includes(rules.tahajud));
         } else if (textInfo.includes("mengaji") || textInfo.includes("tilawah")) {
-          targetItem = items.find(el => el.textContent.includes("Melaksanakan") || el.textContent.includes("Ya"));
+          targetItem = items.find((el) => {
+            const text = (el.textContent || '').toLowerCase();
+            return mengajiMelaksanakan
+              ? !text.includes("tidak") && (text.includes("melaksanakan") || text.includes("ya"))
+              : text.includes("tidak melaksanakan") || text.includes("tidak") || text.includes("belum");
+          }) || items[0];
+        } else if (isShalatHarian(textInfo)) {
+          targetItem = pickShalatDropdownItem(items, rules.shalatHarian);
         } else {
           targetItem = items.find(el => el.textContent.includes("Melaksanakan") || el.textContent.includes("Ya"));
         }
@@ -784,7 +897,13 @@ async function jalankanDenganKontrol(speedMode) {
         } else if (titleText.includes("dhuha")) {
           clickModalOption(modalContent, `input[data-category="${rules.dhuha}"], input[data-point="4"]`, rules.dhuha);
         } else if (titleText.includes("mengaji") || titleText.includes("tilawah")) {
-          clickModalOption(modalContent, 'input[data-category="Melaksanakan"], input[data-point="1"]', "Melaksanakan");
+          if (mengajiMelaksanakan) {
+            clickModalOption(modalContent, 'input[data-category="Melaksanakan"], input[data-point="1"]', "Melaksanakan");
+          } else {
+            clickModalOption(modalContent, 'input[data-category="Tidak Melaksanakan"], input[data-point="0"]', "Tidak Melaksanakan");
+          }
+        } else if (isShalatHarian(textInfo) || isShalatHarian(titleText)) {
+          applyShalatHarianModal(modalContent, rules.shalatHarian);
         } else {
           clickModalOption(modalContent, 'input.do_pray, input[data-category="Melaksanakan"], input[data-category="Ya"], input[data-point="1"]', "Melaksanakan");
           clickModalOption(modalContent, 'form.salat-item input[data-category="Ya"], form.salat-item input[data-point="2"]', "Ya");

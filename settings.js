@@ -18,6 +18,7 @@ const WITNESS_LABELS = {
 
 const tahajudSelect = $('tahajudRakaat');
 const dhuhaSelect = $('dhuhaRakaat');
+const shalatHarianSelect = $('shalatHarianStatus');
 const tahajudDaysHint = $('tahajudDaysHint');
 const btnSave = $('btnSaveSettings');
 const btnBack = $('btnBack');
@@ -37,6 +38,7 @@ const btnReloadHabits = $('btnReloadHabits');
 const rows = {
   tahajudDays: document.querySelector('[data-days="tahajudDays"]'),
   dhuhaDays: document.querySelector('[data-days="dhuhaDays"]'),
+  shalatHarianDays: document.querySelector('[data-days="shalatHarianDays"]'),
   mengajiDays: document.querySelector('[data-days="mengajiDays"]')
 };
 
@@ -127,6 +129,19 @@ function getDayRow(row) {
   return row.dataset.mode === 'single' ? active.slice(0, 1) : active;
 }
 
+function syncAllDaysButton(row) {
+  if (!row) return;
+  const btn = document.querySelector(`[data-all-days="${row.dataset.days}"]`);
+  if (!btn) return;
+
+  const total = row.querySelectorAll('.day-toggle').length;
+  const active = row.querySelectorAll('.day-toggle.is-active').length;
+  const allActive = total > 0 && active === total;
+
+  btn.textContent = allActive ? 'Kosongkan' : 'Pilih Semua';
+  btn.classList.toggle('is-all', allActive);
+}
+
 function updateTahajudDaysState(value) {
   const disabled = (value || '').toLowerCase().includes('tidak');
   if (rows.tahajudDays) {
@@ -167,6 +182,7 @@ const tahajudGroup = initOptionGroup(
   updateTahajudDaysState
 );
 const dhuhaGroup = initOptionGroup(document.querySelector('[data-select="dhuhaRakaat"]'));
+const shalatHarianGroup = initOptionGroup(document.querySelector('[data-select="shalatHarianStatus"]'));
 
 dayRows.forEach((row) => {
   row.addEventListener('click', (event) => {
@@ -184,6 +200,25 @@ dayRows.forEach((row) => {
     btn.classList.remove('pop');
     void btn.offsetWidth;
     btn.classList.add('pop');
+
+    syncAllDaysButton(row);
+  });
+});
+
+document.querySelectorAll('[data-all-days]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const row = rows[btn.dataset.allDays];
+    if (!row) return;
+
+    const total = row.querySelectorAll('.day-toggle').length;
+    const active = row.querySelectorAll('.day-toggle.is-active').length;
+    const selectAll = active < total;
+
+    row.querySelectorAll('.day-toggle').forEach((toggle) => {
+      toggle.classList.toggle('is-active', selectAll);
+    });
+
+    syncAllDaysButton(row);
   });
 });
 
@@ -461,7 +496,8 @@ btnReloadHabits.addEventListener('click', loadWeeklyHabits);
 chrome.storage.local.get(
   [
     'ruleTahajud', 'ruleDhuha', 'ruleDays',
-    'ruleTahajudDays', 'ruleDhuhaDays', 'ruleMengajiDays'
+    'ruleTahajudDays', 'ruleDhuhaDays', 'ruleMengajiDays',
+    'ruleShalatHarian', 'ruleShalatHarianDays'
   ],
   (result) => {
     const legacyDays = result.ruleDays !== undefined ? result.ruleDays : ALL_DAYS;
@@ -469,11 +505,15 @@ chrome.storage.local.get(
 
     tahajudGroup.sync(tahajudValue, false);
     dhuhaGroup.sync(result.ruleDhuha || '4 Rakaat', false);
+    shalatHarianGroup.sync(result.ruleShalatHarian || 'auto', false);
     updateTahajudDaysState(tahajudValue);
 
     setDayRow(rows.tahajudDays, result.ruleTahajudDays !== undefined ? result.ruleTahajudDays : legacyDays);
     setDayRow(rows.dhuhaDays, result.ruleDhuhaDays !== undefined ? result.ruleDhuhaDays : legacyDays);
+    setDayRow(rows.shalatHarianDays, result.ruleShalatHarianDays !== undefined ? result.ruleShalatHarianDays : ALL_DAYS);
     setDayRow(rows.mengajiDays, result.ruleMengajiDays !== undefined ? result.ruleMengajiDays : legacyDays);
+
+    Object.values(rows).forEach(syncAllDaysButton);
   }
 );
 
@@ -511,6 +551,8 @@ btnSave.addEventListener('click', () => {
     ruleDhuha: dhuhaSelect.value,
     ruleTahajudDays: getDayRow(rows.tahajudDays),
     ruleDhuhaDays: getDayRow(rows.dhuhaDays),
+    ruleShalatHarian: shalatHarianSelect.value,
+    ruleShalatHarianDays: getDayRow(rows.shalatHarianDays),
     ruleMengajiDays: getDayRow(rows.mengajiDays)
   };
 
